@@ -1,6 +1,7 @@
 from elasticsearch import Elasticsearch
 from ..core.config import get_settings
 from typing import List, Dict
+from elasticsearch import NotFoundError, TransportError
 
 _es_client = None
 
@@ -25,8 +26,11 @@ def search_documents(query: str, size: int = 3) -> List[Dict]:
         },
         "size": size
     }
-    resp = es.search(index=settings.es_index, body=body)
-    hits = resp.get('hits', {}).get('hits', [])
+    try:
+        resp = es.search(index=settings.es_index, body=body)
+        hits = resp.get('hits', {}).get('hits', [])
+    except (NotFoundError, TransportError):
+        return []
     return [
         {
             "id": h.get('_id'),
